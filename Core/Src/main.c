@@ -55,49 +55,7 @@
 
 
 // SPI handle
-extern SPI_HandleTypeDef hspi2;
-
-// wybór / odznaczenie CS
-void OLED_Select(void) {
-    HAL_GPIO_WritePin(OLED_CS_PORT, OLED_CS_PIN, GPIO_PIN_RESET);
-}
-void OLED_Unselect(void) {
-    HAL_GPIO_WritePin(OLED_CS_PORT, OLED_CS_PIN, GPIO_PIN_SET);
-}
-
-// wysyłanie komendy
-void OLED_Command(uint8_t cmd) {
-    HAL_GPIO_WritePin(OLED_DC_PORT, OLED_DC_PIN, GPIO_PIN_RESET); // command
-    HAL_GPIO_WritePin(OLED_CS_PORT, OLED_CS_PIN, GPIO_PIN_RESET);
-    HAL_SPI_Transmit(&hspi2, &cmd, 1, HAL_MAX_DELAY);
-    HAL_GPIO_WritePin(OLED_CS_PORT, OLED_CS_PIN, GPIO_PIN_SET);
-}
-
-// wysyłanie danych
-void OLED_Data(uint8_t data) {
-    HAL_GPIO_WritePin(OLED_DC_PORT, OLED_DC_PIN, GPIO_PIN_SET); // data
-    HAL_GPIO_WritePin(OLED_CS_PORT, OLED_CS_PIN, GPIO_PIN_RESET);
-    HAL_SPI_Transmit(&hspi2, &data, 1, HAL_MAX_DELAY);
-    HAL_GPIO_WritePin(OLED_CS_PORT, OLED_CS_PIN, GPIO_PIN_SET);
-}
-
-// reset OLED
-void OLED_Reset(void) {
-    HAL_GPIO_WritePin(OLED_RST_PORT, OLED_RST_PIN, GPIO_PIN_RESET);
-    HAL_Delay(10);
-    HAL_GPIO_WritePin(OLED_RST_PORT, OLED_RST_PIN, GPIO_PIN_SET);
-    HAL_Delay(10);
-}
-
-
-void OLED_Init(void) {
-    OLED_Reset();
-
-    HAL_Delay(50);
-    OLED_Command(0xAE); // display off
-    OLED_Command(0xA6); // normal display
-    OLED_Command(0xAF); // display on
-}
+//extern SPI_HandleTypeDef hspi2;
 
 
 void loop() {
@@ -111,25 +69,7 @@ void loop() {
 	HAL_Delay(150);
 }
 
-void gyroLoop(I2C_HandleTypeDef i2c){
 
-	  uint8_t who_am_i = 0;
-	  uint8_t data = 0x00;
-	  HAL_I2C_Mem_Read(&i2c, 0x68<<1, 0x75, 1, &who_am_i, 1, HAL_MAX_DELAY);
-	  HAL_I2C_Mem_Write(&i2c, 0x68<<1, 0x6B, 1, &data, 1, HAL_MAX_DELAY);
-	  HAL_Delay(100);
-	  printf("Who Am I: 0x%X\n", who_am_i);
-	float x;
-	float y;
-	float z;
-	MPU6050_init();
-	MPU6050_Read_Accel(&x, &y, &z);
-
-	print_float(x);
-
-	HAL_Delay(1000);
-	gyroLoop(i2c);
-}
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -208,11 +148,11 @@ int move_y(int device_zero, int y, int yPos){
 int move_x(int device_zero, int x, int xPos){
 	if(x>device_zero+10 && xPos<100){
 		xPos+=1;
-		printf("idzie w lewo");
+		//printf("idzie w lewo");
 	}
 	else if(x<device_zero-10 && xPos>0){
 		xPos-=1;
-		printf("idzie w prawo");
+		//printf("idzie w prawo");
 	}
 
 	if(x>device_zero+30 && xPos<100){
@@ -229,6 +169,58 @@ int move_x(int device_zero, int x, int xPos){
 		xPos-=1;
 	}
 	return xPos;
+}
+
+
+#define MAZE_W 128
+#define MAZE_H 64
+#define MAZE_SIZE (MAZE_W * MAZE_H)
+
+uint8_t maze[MAZE_H][MAZE_W];
+uint8_t rx_byte;
+uint32_t index = 0;
+uint8_t receiving = 0;
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART2)
+    {
+        if (!receiving)
+        {
+            if (rx_byte == 0xAA)
+            {
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+                receiving = 1;
+                index = 0;
+            }
+        }
+        else
+        {
+            if (rx_byte == 0x55)
+            {
+                receiving = 0;
+
+                for(int i=0; i<MAZE_H; i++){
+                	for(int j=0; j<MAZE_W; j++){
+              		  if(maze[i][j] == 1)
+              			  ssd1306_DrawPixel(j, i, (SSD1306_COLOR) White);
+              		  else
+              			  ssd1306_DrawPixel(j, i, (SSD1306_COLOR) Black);
+                	}
+                }
+
+
+                ssd1306_UpdateScreen();
+            }
+            else if (index < MAZE_SIZE)
+            {
+                maze[index / MAZE_W][index % MAZE_W] = rx_byte;
+                index++;
+            }
+        }
+
+        HAL_UART_Receive_IT(&huart2, &rx_byte, 1);
+    }
 }
 /* USER CODE END 0 */
 
@@ -263,6 +255,8 @@ int main(void)
   MX_USART2_UART_Init();
   MX_SPI2_Init();
   MX_I2C1_Init();
+
+  HAL_UART_Receive_IT(&huart2, &rx_byte, 1);
   /* USER CODE BEGIN 2 */
   int tab[ROWS][COLS]=
   {
@@ -315,11 +309,11 @@ int main(void)
 
 	MPU6050_Read_Accel(&x, &y, &z);
 
-	print_float(x);
+	//print_float(x);
 
 	MPU6050_Read_Accel(&x, &y, &z);
 
-	print_float(x);
+	//print_float(x);
 
 	int xPos = 0;
 	int yPos = 0;
@@ -340,21 +334,22 @@ int main(void)
 
 		MPU6050_Read_Accel(&x, &y, &z);
 
-		print_float(x);
+		//print_float(x);
 		//x on gyro is y on screen
 		xPos = move_x(device_zero_y ,y, xPos);
 		yPos = move_y(device_zero_x, x, yPos);
 
 
-		ssd1306_Fill(Black);
+		//ssd1306_Fill(Black);
 
-		ssd1306_SetCursor(xPos,yPos);
-		ssd1306_WriteString("Kocham WOJAK", Font_7x10, White);
+		//ssd1306_SetCursor(xPos,yPos);
+		//ssd1306_WriteString("Kocham WOJAK", Font_7x10, White);
 
-		  ssd1306_UpdateScreen();
+		//ssd1306_UpdateScreen();
 
-
-		HAL_Delay(100);
+		char c = 'A';  // lub dowolny znak
+		//HAL_UART_Transmit(&huart2, (uint8_t*)&c, 1, HAL_MAX_DELAY);
+		HAL_Delay(1000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
