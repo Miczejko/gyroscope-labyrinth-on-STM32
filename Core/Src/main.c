@@ -119,58 +119,6 @@ void print_float(float x) {
 }
 
 
-int move_y(int device_zero, int y, int yPos){
-	if(y>device_zero+10 && yPos<50){
-		yPos+=1;
-		printf("idzie w dol");
-	}
-	else if(y<device_zero-10 && yPos>0){
-		yPos-=1;
-		printf("idzie do gory");
-	}
-
-	if(y>device_zero+30 && yPos<50){
-		yPos+=1;
-	}
-	else if(y<device_zero-30 && yPos>0){
-		yPos-=1;
-	}
-
-	if(y>device_zero+50 && yPos<50){
-		yPos+=1;
-	}
-	else if(y<device_zero-50 && yPos>0){
-		yPos-=1;
-	}
-	return yPos;
-}
-
-int move_x(int device_zero, int x, int xPos){
-	if(x>device_zero+10 && xPos<100){
-		xPos+=1;
-		//printf("idzie w lewo");
-	}
-	else if(x<device_zero-10 && xPos>0){
-		xPos-=1;
-		//printf("idzie w prawo");
-	}
-
-	if(x>device_zero+30 && xPos<100){
-		xPos+=1;
-	}
-	else if(x<device_zero-30 && xPos>0){
-		xPos-=1;
-	}
-
-	if(x>device_zero+50 && xPos<100){
-		xPos+=1;
-	}
-	else if(x<device_zero-50 && xPos>0){
-		xPos-=1;
-	}
-	return xPos;
-}
-
 
 #define MAZE_W 128
 #define MAZE_H 64
@@ -180,6 +128,107 @@ uint8_t maze[MAZE_H][MAZE_W];
 uint8_t rx_byte;
 uint32_t index = 0;
 uint8_t receiving = 0;
+
+
+int xPos = 1;
+int yPos = 1;
+
+
+
+int move_y(int device_zero, int y){
+	if(y>device_zero+10 && yPos<62){
+		if(maze[yPos+2][xPos]!=1 && maze[yPos+2][xPos+1]!=1 && maze[yPos+2][xPos-1]!=1)
+			yPos+=1;
+		printf("idzie w dol");
+	}
+	else if(y<device_zero-10 && yPos>0){
+		if(maze[yPos-2][xPos]!=1 && maze[yPos-2][xPos+1]!=1 && maze[yPos-2][xPos-1]!=1)
+			yPos-=1;
+		printf("idzie do gory");
+	}
+
+	if(y>device_zero+30 && yPos<62){
+		if(maze[yPos+2][xPos]!=1 && maze[yPos+2][xPos+1]!=1 && maze[yPos+2][xPos-1]!=1)
+			yPos+=1;
+	}
+	else if(y<device_zero-30 && yPos>0){
+		if(maze[yPos-2][xPos]!=1 && maze[yPos-2][xPos+1]!=1 && maze[yPos-2][xPos-1]!=1)
+			yPos-=1;
+	}
+
+	//optional 3times speed
+//	if(y>device_zero+50 && yPos<50){
+//		yPos+=1;
+//	}
+//	else if(y<device_zero-50 && yPos>0){
+//		yPos-=1;
+//	}
+	return yPos;
+}
+
+int move_x(int device_zero, int x){
+	if(x>device_zero+10 && xPos<126){
+		if(maze[yPos][xPos+2]!=1 && maze[yPos+1][xPos+2]!=1 && maze[yPos-1][xPos+2]!=1)
+			xPos+=1;
+		//printf("idzie w lewo");
+	}
+	else if(x<device_zero-10 && xPos>0){
+		if(maze[yPos][xPos-2]!=1 && maze[yPos+1][xPos-2]!=1 && maze[yPos-1][xPos-2]!=1)
+			xPos-=1;
+		//printf("idzie w prawo");
+	}
+
+	if(x>device_zero+30 && xPos<126){
+		if(maze[yPos][xPos+2]!=1 && maze[yPos+1][xPos+2]!=1 && maze[yPos-1][xPos+2]!=1)
+			xPos+=1;
+	}
+	else if(x<device_zero-30 && xPos>0){
+		if(maze[yPos][xPos-2]!=1 && maze[yPos+1][xPos-2]!=1 && maze[yPos-1][xPos-2]!=1)
+			xPos-=1;
+	}
+
+	//optional 3times speed
+//	if(x>device_zero+50 && xPos<100){
+//		xPos+=1;
+//	}
+//	else if(x<device_zero-50 && xPos>0){
+//		xPos-=1;
+//	}
+	return xPos;
+}
+
+void drawStart(int x, int y){
+	ssd1306_DrawPixel(x-1, y, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x, y-1, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x+1, y, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x, y+1, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x+2, y-1, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x+2, y+1, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x-2, y-1, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x-2, y+1, (SSD1306_COLOR) White);
+}
+
+void drawFinish(int x, int y){
+	ssd1306_DrawPixel(x, y+1, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x-1, y+1, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x+1, y+1, (SSD1306_COLOR) White);
+
+	ssd1306_DrawPixel(x, y, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x, y-1, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x, y-2, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x, y-3, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x, y-4, (SSD1306_COLOR) White);
+
+	ssd1306_DrawPixel(x-1, y-3, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x-1, y-4, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x-2, y-3, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x-2, y-4, (SSD1306_COLOR) White);
+
+	ssd1306_DrawPixel(x-3, y-3, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x-3, y-2, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x-4, y-3, (SSD1306_COLOR) White);
+	ssd1306_DrawPixel(x-4, y-2, (SSD1306_COLOR) White);
+}
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
@@ -199,16 +248,20 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
             if (rx_byte == 0x55)
             {
                 receiving = 0;
-
+                ssd1306_Fill(Black);
                 for(int i=0; i<MAZE_H; i++){
                 	for(int j=0; j<MAZE_W; j++){
               		  if(maze[i][j] == 1)
               			  ssd1306_DrawPixel(j, i, (SSD1306_COLOR) White);
-              		  else
-              			  ssd1306_DrawPixel(j, i, (SSD1306_COLOR) Black);
+              		  else if(maze[i][j] == 2){
+              			  //drawStart(j,i);
+              			  xPos=j;
+              			  yPos=i;
+              		  }
+              		  else if(maze[i][j] == 3)
+              			  drawFinish(j,i);
                 	}
                 }
-
 
                 ssd1306_UpdateScreen();
             }
@@ -221,6 +274,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
         HAL_UART_Receive_IT(&huart2, &rx_byte, 1);
     }
+}
+
+int tab[3][3] = {
+		{1,2,3},
+		{1,2,3},
+		{1,2,3}
 }
 /* USER CODE END 0 */
 
@@ -258,35 +317,16 @@ int main(void)
 
   HAL_UART_Receive_IT(&huart2, &rx_byte, 1);
   /* USER CODE BEGIN 2 */
-  int tab[ROWS][COLS]=
-  {
-      {0, 0, 0, 0, 0, 0, 1, 0, 1, 0},
-	  {1, 1, 1, 0, 0, 0, 1, 0, 1, 0},
-	  {0, 0, 1, 0, 0, 0, 1, 0, 1, 0},
-	  {0, 0, 1, 1, 1, 0, 1, 0, 1, 0},
-	  {0, 0, 0, 0, 1, 0, 1, 0, 1, 0},
-	  {0, 1, 1, 0, 0, 0, 1, 0, 1, 0},
-	  {0, 0, 1, 1, 1, 1, 1, 0, 0, 0},
-	  {1, 0, 0, 0, 1, 0, 0, 0, 1, 1},
-	  {1, 1, 1, 0, 1, 0, 1, 0, 1, 0},
-      {1, 1, 1, 0, 0, 0, 1, 0, 0, 0}
-  };
+
+
+  for(int i=0; i<MAZE_H; i++){
+  	for(int j=0; j<MAZE_W; j++){
+		  maze[i][j] == 0;
+  	}
+  }
 
 
   ssd1306_Init();
-  for(int i=0; i < ROWS; i++){
-	  for(int j=0; j < COLS; j++){
-		  if(tab[i][j])
-			  ssd1306_DrawPixel(i, j, (SSD1306_COLOR) White);
-		  else
-			  ssd1306_DrawPixel(i, j, (SSD1306_COLOR) Black);
-	  }
-  }
-
-  ssd1306_SetCursor(10,10);
-  ssd1306_WriteString("Kocham WOJAK", Font_7x10, White);
-
-  ssd1306_UpdateScreen();
 
   if (HAL_I2C_IsDeviceReady(&hi2c1, 0x68 << 1, 3, 100) == HAL_OK) {
       printf("MPU6050 znaleziony!\n");
@@ -311,13 +351,6 @@ int main(void)
 
 	//print_float(x);
 
-	MPU6050_Read_Accel(&x, &y, &z);
-
-	//print_float(x);
-
-	int xPos = 0;
-	int yPos = 0;
-
 	int device_zero_x = (int)x;
 	int device_zero_y = (int)y;
 
@@ -332,24 +365,34 @@ int main(void)
   {
     /* USER CODE END WHILE */
 
+	  	 //saving data from gyro to x,y,z variables
 		MPU6050_Read_Accel(&x, &y, &z);
 
-		//print_float(x);
+		//clearing previous position
+		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) Black);
+		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) Black);
+		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) Black);
+		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) Black);
+
 		//x on gyro is y on screen
-		xPos = move_x(device_zero_y ,y, xPos);
-		yPos = move_y(device_zero_x, x, yPos);
+		//changing player position
+		xPos = move_x(device_zero_y ,y);
+		yPos = move_y(device_zero_x, x);
 
+		//displaying new position
+		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
+		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
+		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) White);
+		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) White);
 
-		//ssd1306_Fill(Black);
+		ssd1306_UpdateScreen();
+		HAL_Delay(100);
 
 		//ssd1306_SetCursor(xPos,yPos);
-		//ssd1306_WriteString("Kocham WOJAK", Font_7x10, White);
-
-		//ssd1306_UpdateScreen();
-
-		char c = 'A';  // lub dowolny znak
+		//ssd1306_WriteString("napis", Font_7x10, White);
+		//char c = 'A';
 		//HAL_UART_Transmit(&huart2, (uint8_t*)&c, 1, HAL_MAX_DELAY);
-		HAL_Delay(1000);
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
