@@ -26,6 +26,8 @@
 #include "ssd1306_tests.h"
 #include "ssd1306_fonts.h"
 
+#include "savedMazes.h"
+
 #include <stdbool.h>
 
 /* Private includes ----------------------------------------------------------*/
@@ -276,11 +278,50 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     }
 }
 
-int tab[3][3] = {
-		{1,2,3},
-		{1,2,3},
-		{1,2,3}
+int maze_number = 1;
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == B1_Pin)
+  {
+	  if(maze_number == 1){
+		  for(int i=0; i<MAZE_H; i++){
+			for(int j=0; j<MAZE_W; j++){
+				maze[i][j] = savedMaze2[i][j];
+			}
+		  }
+		  maze_number = 2;
+	  }
+	  else if(maze_number == 2){
+		  for(int i=0; i<MAZE_H; i++){
+			for(int j=0; j<MAZE_W; j++){
+				maze[i][j] = savedMaze1[i][j];
+			}
+		  }
+		  maze_number = 1;
+	  }
+
+
+
+	  ssd1306_Fill(Black);
+	  for(int i=0; i<MAZE_H; i++){
+	  	for(int j=0; j<MAZE_W; j++){
+			  if(maze[i][j] == 1)
+				  ssd1306_DrawPixel(j, i, (SSD1306_COLOR) White);
+			  else if(maze[i][j] == 2){
+				  //drawStart(j,i);
+				  xPos=j;
+				  yPos=i;
+			  }
+			  else if(maze[i][j] == 3)
+				  drawFinish(j,i);
+	  	}
+	  }
+
+	  ssd1306_UpdateScreen();
+
+  }
 }
+
 /* USER CODE END 0 */
 
 /**
@@ -315,18 +356,35 @@ int main(void)
   MX_SPI2_Init();
   MX_I2C1_Init();
 
-  HAL_UART_Receive_IT(&huart2, &rx_byte, 1);
   /* USER CODE BEGIN 2 */
+  HAL_UART_Receive_IT(&huart2, &rx_byte, 1);
+  ssd1306_Init();
 
 
   for(int i=0; i<MAZE_H; i++){
   	for(int j=0; j<MAZE_W; j++){
-		  maze[i][j] == 0;
+		  maze[i][j] = savedMaze1[i][j];
+  	}
+  }
+  ssd1306_Fill(Black);
+  for(int i=0; i<MAZE_H; i++){
+  	for(int j=0; j<MAZE_W; j++){
+		  if(maze[i][j] == 1)
+			  ssd1306_DrawPixel(j, i, (SSD1306_COLOR) White);
+		  else if(maze[i][j] == 2){
+			  //drawStart(j,i);
+			  xPos=j;
+			  yPos=i;
+		  }
+		  else if(maze[i][j] == 3)
+			  drawFinish(j,i);
   	}
   }
 
+  ssd1306_UpdateScreen();
 
-  ssd1306_Init();
+
+
 
   if (HAL_I2C_IsDeviceReady(&hi2c1, 0x68 << 1, 3, 100) == HAL_OK) {
       printf("MPU6050 znaleziony!\n");
@@ -616,6 +674,9 @@ static void MX_GPIO_Init(void)
 
   GPIO_InitStruct.Pin = GPIO_PIN_4;  // RST
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 

@@ -32,7 +32,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
  ../Core/Inc/MPU6050.h ../Core/Inc/ssd1306.h ../Core/Inc/ssd1306_conf.h \
  ../Core/Inc/ssd1306_tests.h ../Core/Inc/ssd1306_fonts.h \
- ../Core/Inc/ssd1306.h
+ ../Core/Inc/ssd1306.h ../Core/Inc/savedMazes.h
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
@@ -71,3 +71,4 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/ssd1306_tests.h:
 ../Core/Inc/ssd1306_fonts.h:
 ../Core/Inc/ssd1306.h:
+../Core/Inc/savedMazes.h:
