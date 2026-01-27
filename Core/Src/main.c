@@ -131,7 +131,7 @@ uint8_t rx_byte;
 uint32_t index = 0;
 uint8_t receiving = 0;
 
-
+bool isStart = false;
 int xPos = 1;
 int yPos = 1;
 
@@ -363,7 +363,7 @@ int main(void)
 
   for(int i=0; i<MAZE_H; i++){
   	for(int j=0; j<MAZE_W; j++){
-		  maze[i][j] = savedMaze1[i][j];
+		  maze[i][j] = menuMaze[i][j];
   	}
   }
   ssd1306_Fill(Black);
@@ -436,6 +436,33 @@ int main(void)
 		//changing player position
 		xPos = move_x(device_zero_y ,y);
 		yPos = move_y(device_zero_x, x);
+
+		if((xPos > 15 && xPos < 22) && (yPos > 48 && yPos <= 50)){
+					isStart = true;
+					ssd1306_Fill(Black);
+
+					for(int i=0; i<MAZE_H; i++){
+					    	for(int j=0; j<MAZE_W; j++){
+					  		  maze[i][j] = savedMaze1[i][j];
+					    	}
+					    }
+
+					for(int i=0; i<MAZE_H; i++){
+					  	for(int j=0; j<MAZE_W; j++){
+							  if(maze[i][j] == 1)
+								  ssd1306_DrawPixel(j, i, (SSD1306_COLOR) White);
+							  else if(maze[i][j] == 2){
+								  //drawStart(j,i);
+								  xPos=j;
+								  yPos=i;
+							  }
+							  else if(maze[i][j] == 3)
+								  drawFinish(j,i);
+					  	}
+					  }
+
+				}
+
 
 		//displaying new position
 		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
