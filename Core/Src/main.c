@@ -120,6 +120,13 @@ void print_float(float x) {
     printf("%d.%02d\n", int_part, frac_part);
 }
 
+typedef enum {
+	STATE_HOME,
+    STATE_MENU,
+    STATE_GAME
+} AppState;
+
+AppState currentState = STATE_HOME;
 
 
 #define MAZE_W 128
@@ -132,6 +139,7 @@ uint32_t index = 0;
 uint8_t receiving = 0;
 
 bool isStart = false;
+int whichMap = 0;
 int xPos = 1;
 int yPos = 1;
 
@@ -230,6 +238,89 @@ void drawFinish(int x, int y){
 	ssd1306_DrawPixel(x-3, y-2, (SSD1306_COLOR) White);
 	ssd1306_DrawPixel(x-4, y-3, (SSD1306_COLOR) White);
 	ssd1306_DrawPixel(x-4, y-2, (SSD1306_COLOR) White);
+}
+
+void HomeLoop(){
+	if((xPos > 15 && xPos < 22) && (yPos > 48 && yPos <= 50)){
+		ssd1306_Fill(Black);
+		currentState = STATE_MENU;
+
+	}
+}
+
+void GameLoop(){
+
+	if(whichMap == 1){
+		for(int i=0; i<MAZE_H; i++){
+				for(int j=0; j<MAZE_W; j++){
+					maze[i][j] = savedMaze1[i][j];
+				}
+			}
+	}else {
+		for(int i=0; i<MAZE_H; i++){
+						for(int j=0; j<MAZE_W; j++){
+							maze[i][j] = savedMaze2[i][j];
+						}
+					}
+	}
+
+	drawMaze(maze);
+}
+
+void MenuLoop(){
+
+	for(int i=0; i<MAZE_H; i++){
+		for(int j=0; j<MAZE_W; j++){
+			maze[i][j] = labirynthChoiceMaze[i][j];
+		}
+	}
+
+	drawMaze(maze);
+
+	if((xPos >= 35 && xPos < 38) && yPos > 35){
+		whichMap = 1;
+	}else if((xPos >= 69 && xPos < 73) && yPos > 35){
+		whichMap = 2;
+	}
+
+	printf("wybrano mape! %d\n", whichMap);
+
+
+	if(whichMap > 0){
+		ssd1306_Fill(Black);
+		if(whichMap == 1){
+				for(int i=0; i<MAZE_H; i++){
+						for(int j=0; j<MAZE_W; j++){
+							maze[i][j] = savedMaze1[i][j];
+						}
+					}
+			}else {
+				for(int i=0; i<MAZE_H; i++){
+								for(int j=0; j<MAZE_W; j++){
+									maze[i][j] = savedMaze2[i][j];
+								}
+							}
+			}
+		drawMaze(maze);
+		currentState = STATE_GAME;
+	}
+
+}
+
+void drawMaze(uint8_t m[MAZE_H][MAZE_W]){
+	for(int i=0; i<MAZE_H; i++){
+			for(int j=0; j<MAZE_W; j++){
+								  if(m[i][j] == 1)
+									  ssd1306_DrawPixel(j, i, (SSD1306_COLOR) White);
+								  else if(m[i][j] == 2){
+									  //drawStart(j,i);
+									  xPos=j;
+									  yPos=i;
+								  }
+								  else if(m[i][j] == 3)
+									  drawFinish(j,i);
+						  	}
+						  }
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -412,7 +503,33 @@ int main(void)
 	int device_zero_x = (int)x;
 	int device_zero_y = (int)y;
 
-
+//	void startGame(int whichMaze){
+//		 //saving data from gyro to x,y,z variables
+//		MPU6050_Read_Accel(&x, &y, &z);
+//
+//		//clearing previous position
+//		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) Black);
+//		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) Black);
+//		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) Black);
+//		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) Black);
+//
+//		//x on gyro is y on screen
+//		//changing player position
+//		xPos = move_x(device_zero_y ,y);
+//		yPos = move_y(device_zero_x, x);
+//
+//
+//
+//
+//		//displaying new position
+//		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
+//		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
+//		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) White);
+//		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) White);
+//
+//		ssd1306_UpdateScreen();
+//		HAL_Delay(100);
+//	}
 	//gyroLoop(hi2c1);
 
   /* USER CODE END 2 */
@@ -423,55 +540,102 @@ int main(void)
   {
     /* USER CODE END WHILE */
 
-	  	 //saving data from gyro to x,y,z variables
-		MPU6050_Read_Accel(&x, &y, &z);
+	  	if(currentState == STATE_GAME){
 
-		//clearing previous position
-		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) Black);
-		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) Black);
-		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) Black);
-		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) Black);
+	  		MPU6050_Read_Accel(&x, &y, &z);
 
-		//x on gyro is y on screen
-		//changing player position
-		xPos = move_x(device_zero_y ,y);
-		yPos = move_y(device_zero_x, x);
+	  		//clearing previous position
+	  		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) Black);
+	  		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) Black);
+	  		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) Black);
+	  		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) Black);
 
-		if((xPos > 15 && xPos < 22) && (yPos > 48 && yPos <= 50)){
-					isStart = true;
-					ssd1306_Fill(Black);
+	  		xPos = move_x(device_zero_y ,y);
+	  		yPos = move_y(device_zero_x, x);
 
-					for(int i=0; i<MAZE_H; i++){
-					    	for(int j=0; j<MAZE_W; j++){
-					  		  maze[i][j] = savedMaze1[i][j];
-					    	}
-					    }
+	  		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
+	  		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
+	  		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) White);
+	  		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) White);
 
-					for(int i=0; i<MAZE_H; i++){
-					  	for(int j=0; j<MAZE_W; j++){
-							  if(maze[i][j] == 1)
-								  ssd1306_DrawPixel(j, i, (SSD1306_COLOR) White);
-							  else if(maze[i][j] == 2){
-								  //drawStart(j,i);
-								  xPos=j;
-								  yPos=i;
-							  }
-							  else if(maze[i][j] == 3)
-								  drawFinish(j,i);
-					  	}
-					  }
+	  		ssd1306_UpdateScreen();
+	  		HAL_Delay(100);
+	  	}else{
+	  		 //saving data from gyro to x,y,z variables
+	  				MPU6050_Read_Accel(&x, &y, &z);
 
-				}
+	  				//clearing previous position
+	  				ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) Black);
+	  				ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) Black);
+	  				ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) Black);
+	  				ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) Black);
+
+	  				//x on gyro is y on screen
+	  				//changing player position
+	  				xPos = move_x(device_zero_y ,y);
+	  				yPos = move_y(device_zero_x, x);
+
+	  				ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
+	  								ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
+	  								ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) White);
+	  								ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) White);
+	  				switch(currentState){
+	  					case STATE_HOME:
+	  						HomeLoop();
+	  						break;
+	  					case STATE_MENU:
+	  						MenuLoop();
+	  						break;
+	  				}
+
+	  		//		if((xPos > 15 && xPos < 22) && (yPos > 48 && yPos <= 50)){
+	  		//					isStart = true;
+	  		//					ssd1306_Fill(Black);
+	  		//
+	  		//					for(int i=0; i<MAZE_H; i++){
+	  		//					    	for(int j=0; j<MAZE_W; j++){
+	  		//					  		  maze[i][j] = labirynthChoiceMaze[i][j];
+	  		//					    	}
+	  		//					    }
+	  		//
+	  		//					drawMaze(maze);
+	  		//
+	  		//					if((xPos >= 35 && xPos < 38) && yPos > 35){
+	  		//						whichMap = 1;
+	  		//					}else if((xPos >= 69 && xPos < 73) && yPos > 35){
+	  		//						whichMap = 2;
+	  		//					}
+	  		//
+	  		//					printf("whichMap => %d\n", whichMap);
+	  		//					ssd1306_Fill(Black);
+	  		//					if(whichMap == 1){
+	  		//						for(int i=0; i<MAZE_H; i++){
+	  		//							for(int j=0; j<MAZE_W; j++){
+	  		//								maze[i][j] = savedMaze1[i][j];
+	  		//							}
+	  		//						}
+	  		//					}else{
+	  		//						for(int i=0; i<MAZE_H; i++){
+	  		//							for(int j=0; j<MAZE_W; j++){
+	  		//									maze[i][j] = savedMaze2[i][j];
+	  		//							}
+	  		//						}
+	  		//					}
+	  		//
+	  		//					drawMaze(maze);
+	  		//					startGame(whichMap);
+
+
+
+	  						ssd1306_UpdateScreen();
+	  						HAL_Delay(100);
+	  	}
+
+  }
 
 
 		//displaying new position
-		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
-		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
-		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) White);
-		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) White);
 
-		ssd1306_UpdateScreen();
-		HAL_Delay(100);
 
 		//ssd1306_SetCursor(xPos,yPos);
 		//ssd1306_WriteString("napis", Font_7x10, White);
@@ -481,7 +645,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
-}
+
 
 /**
   * @brief System Clock Configuration
