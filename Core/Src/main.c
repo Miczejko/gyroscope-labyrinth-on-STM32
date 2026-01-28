@@ -145,6 +145,7 @@ int xPos = 1;
 int yPos = 1;
 int finishPosX = 0;
 int finishPosY = 0;
+bool mapInit = true;
 
 uint32_t textStartTime = 0;
 uint8_t textShown = 0;
@@ -246,32 +247,9 @@ void drawFinish(int x, int y){
 	ssd1306_DrawPixel(x-4, y-2, (SSD1306_COLOR) White);
 }
 
-void HomeLoop(){
-	if((xPos > 15 && xPos < 22) && (yPos > 48 && yPos <= 50)){
-		ssd1306_Fill(Black);
-		currentState = STATE_MENU;
 
-	}
-}
 
-void GameLoop(){
 
-	if(whichMap == 1){
-		for(int i=0; i<MAZE_H; i++){
-				for(int j=0; j<MAZE_W; j++){
-					maze[i][j] = savedMaze1[i][j];
-				}
-			}
-	}else {
-		for(int i=0; i<MAZE_H; i++){
-						for(int j=0; j<MAZE_W; j++){
-							maze[i][j] = savedMaze2[i][j];
-						}
-					}
-	}
-
-	drawMaze(maze);
-}
 
 void findFinishXY(uint8_t m[MAZE_H][MAZE_W]){
 	for (int i = 0; i < MAZE_H; i++) {
@@ -285,46 +263,7 @@ void findFinishXY(uint8_t m[MAZE_H][MAZE_W]){
 	    }
 }
 
-void MenuLoop(){
 
-	for(int i=0; i<MAZE_H; i++){
-		for(int j=0; j<MAZE_W; j++){
-			maze[i][j] = labirynthChoiceMaze[i][j];
-		}
-	}
-
-	drawMaze(maze);
-
-	if((xPos >= 35 && xPos < 38) && yPos > 35){
-		whichMap = 1;
-	}else if((xPos >= 69 && xPos < 73) && yPos > 35){
-		whichMap = 2;
-	}
-
-	printf("wybrano mape! %d\n", whichMap);
-
-
-	if(whichMap > 0){
-		ssd1306_Fill(Black);
-		if(whichMap == 1){
-				for(int i=0; i<MAZE_H; i++){
-						for(int j=0; j<MAZE_W; j++){
-							maze[i][j] = savedMaze1[i][j];
-						}
-					}
-			}else {
-				for(int i=0; i<MAZE_H; i++){
-								for(int j=0; j<MAZE_W; j++){
-									maze[i][j] = savedMaze2[i][j];
-								}
-							}
-			}
-		findFinishXY(maze);
-		drawMaze(maze);
-		currentState = STATE_GAME;
-	}
-
-}
 
 
 
@@ -342,6 +281,8 @@ void drawMaze(uint8_t m[MAZE_H][MAZE_W]){
 									  drawFinish(j,i);
 						  	}
 						  }
+
+	 ssd1306_UpdateScreen();
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -526,33 +467,7 @@ int main(void)
 	int device_zero_x = (int)x;
 	int device_zero_y = (int)y;
 
-//	void startGame(int whichMaze){
-//		 //saving data from gyro to x,y,z variables
-//		MPU6050_Read_Accel(&x, &y, &z);
-//
-//		//clearing previous position
-//		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) Black);
-//		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) Black);
-//		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) Black);
-//		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) Black);
-//
-//		//x on gyro is y on screen
-//		//changing player position
-//		xPos = move_x(device_zero_y ,y);
-//		yPos = move_y(device_zero_x, x);
-//
-//
-//
-//
-//		//displaying new position
-//		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
-//		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
-//		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) White);
-//		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) White);
-//
-//		ssd1306_UpdateScreen();
-//		HAL_Delay(100);
-//	}
+
 	//gyroLoop(hi2c1);
 
   /* USER CODE END 2 */
@@ -562,100 +477,215 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  printf("pozycja mety: %d\n", currentState);
-	  	if(currentState == STATE_GAME){
 
-	  		MPU6050_Read_Accel(&x, &y, &z);
+	  if(mapInit){
+		  switch(currentState){
 
-	  		//clearing previous position
-	  		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) Black);
-	  		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) Black);
-	  		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) Black);
-	  		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) Black);
+			  case STATE_HOME:
+				for(int i=0; i<MAZE_H; i++){
+					for(int j=0; j<MAZE_W; j++){
+						maze[i][j] = menuMaze[i][j];
+					}
+				}
+				drawMaze(maze);
+				break;
 
-	  		xPos = move_x(device_zero_y ,y);
-	  		yPos = move_y(device_zero_x, x);
-	  		printf("pozycja mety: %d, %d\n", finishPosY, finishPosX);
+			  case STATE_MENU:
+				for(int i=0; i<MAZE_H; i++){
+					for(int j=0; j<MAZE_W; j++){
+						maze[i][j] = labirynthChoiceMaze[i][j];
+					}
+				}
+				drawMaze(maze);
+				break;
 
-	  		if((yPos > finishPosY - 4 && yPos < finishPosY + 2) && (xPos > finishPosX - 4 && xPos < finishPosX + 2)){
-	  			ssd1306_Fill(Black);
-	  			currentState = STATE_WIN;
+			  case STATE_GAME:
+				 if(whichMap == 1){
+				  	  for(int i=0; i<MAZE_H; i++){
+				  	  	 for(int j=0; j<MAZE_W; j++){
+				  	  	  	maze[i][j] = savedMaze1[i][j];
+				  	  	  }
+				  	  }
+				  }else {
+				  	  for(int i=0; i<MAZE_H; i++){
+				  	  	  for(int j=0; j<MAZE_W; j++){
+				  	  	  		maze[i][j] = savedMaze2[i][j];
+				  	  	  }
+				  }
+				  	  	  					}
+				drawMaze(maze);
+				findFinishXY(maze);
+				mapInit = false;
 
+				break;
+			  case STATE_WIN:
+				  ssd1306_WriteString("WYGRALES BRAWO!!!", Font_7x10, White);
+				  break;
 
+		  }
+	  }
 
+	  MPU6050_Read_Accel(&x, &y, &z);
 
+	  ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) Black);
+	  ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) Black);
+	  ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) Black);
+	  ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) Black);
 
+	  xPos = move_x(device_zero_y ,y);
+	  yPos = move_y(device_zero_x, x);
 
-//	  			ssd1306_UpdateScreen();
-	  		}
-
-	  		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
-	  		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
-	  		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) White);
-	  		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) White);
-
-	  		ssd1306_UpdateScreen();
-	  		HAL_Delay(100);
-	  	}else if(currentState == STATE_WIN){
-	  		ssd1306_WriteString("WYGRALES BRAWO!!!", Font_7x10, White);
-
-	  		MPU6050_Read_Accel(&x, &y, &z);
-
-	  		//clearing previous position
-	  		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) Black);
-	  		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) Black);
-	  		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) Black);
-	  		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) Black);
-
-	  		xPos = move_x(device_zero_y ,y);
-	  		yPos = move_y(device_zero_x, x);
-
-	  		if(yPos > 58){
-	  			currentState = STATE_MENU;
-	  		}
-
-	  		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
-	  		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
-	  		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) White);
-	  		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) White);
-
-	  		ssd1306_UpdateScreen();
-	  		HAL_Delay(100);
-
-	  	}
-	  	else{
-	  		 //saving data from gyro to x,y,z variables
-
-	  				MPU6050_Read_Accel(&x, &y, &z);
-
-	  				//clearing previous position
-	  				ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) Black);
-	  				ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) Black);
-	  				ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) Black);
-	  				ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) Black);
-
-	  				//x on gyro is y on screen
-	  				//changing player position
-	  				xPos = move_x(device_zero_y ,y);
-	  				yPos = move_y(device_zero_x, x);
-
-	  				ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
-	  								ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
-	  								ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) White);
-	  								ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) White);
-	  				switch(currentState){
-	  					case STATE_HOME:
-	  						HomeLoop();
-	  						break;
-	  					case STATE_MENU:
-	  						MenuLoop();
-	  						break;
-	  				}
+	  switch(currentState){
+	  	  	case STATE_HOME:
 
 
-	  						ssd1306_UpdateScreen();
-	  						HAL_Delay(100);
-	  	}
+				if((xPos > 15 && xPos < 22) && (yPos > 48 && yPos <= 50)){
+						ssd1306_Fill(Black);
+						currentState = STATE_MENU;
+
+					}
+
+
+	  	  		break;
+
+	  	  	case STATE_MENU:
+
+
+	  	  			if((xPos >= 35 && xPos < 38) && yPos > 35){
+	  	  				whichMap = 1;
+	  	  			}else if((xPos >= 69 && xPos < 73) && yPos > 35){
+	  	  				whichMap = 2;
+	  	  			}
+
+	  	  			printf("wybrano mape! %d\n", whichMap);
+
+
+	  	  			if(whichMap > 0){
+	  	  				ssd1306_Fill(Black);
+
+	  	  				findFinishXY(maze);
+	  	  				currentState = STATE_GAME;
+	  	  			}
+	  	  		break;
+
+	  	  	case STATE_GAME:
+	  	  		  printf("pozycja mety: %d, %d\n", finishPosY, finishPosX);
+
+	  	  		  if((yPos > finishPosY - 4 && yPos < finishPosY + 2) && (xPos > finishPosX - 4 && xPos < finishPosX + 2)){
+	  	  		  	ssd1306_Fill(Black);
+	  	  		  	mapInit=true;
+	  	  		  	printf("wygrales");
+	  	  		  	currentState = STATE_WIN;
+
+	  	  		  }
+	  	  		  break;
+	  	  	case STATE_WIN:
+
+	  	  		if(yPos > 58){
+	  	  		  			currentState = STATE_MENU;
+	  	  		}
+	  	  		break;
+	  }
+
+	  ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
+	  	  		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
+	  	  		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) White);
+	  	  		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) White);
+	  	  	ssd1306_UpdateScreen();
+	  	  	HAL_Delay(100);
+//	  	if(currentState == STATE_GAME){
+//
+//	  		MPU6050_Read_Accel(&x, &y, &z);
+//
+//	  		//clearing previous position
+//	  		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) Black);
+//	  		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) Black);
+//	  		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) Black);
+//	  		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) Black);
+//
+//	  		xPos = move_x(device_zero_y ,y);
+//	  		yPos = move_y(device_zero_x, x);
+//	  		printf("pozycja mety: %d, %d\n", finishPosY, finishPosX);
+//
+//	  		if((yPos > finishPosY - 4 && yPos < finishPosY + 2) && (xPos > finishPosX - 4 && xPos < finishPosX + 2)){
+//	  			ssd1306_Fill(Black);
+//	  			currentState = STATE_WIN;
+//
+//
+//
+//
+//
+//
+////	  			ssd1306_UpdateScreen();
+//	  		}
+//
+//	  		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
+//	  		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
+//	  		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) White);
+//	  		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) White);
+//
+//	  		ssd1306_UpdateScreen();
+//	  		HAL_Delay(100);
+//	  	}else if(currentState == STATE_WIN){
+//	  		ssd1306_WriteString("WYGRALES BRAWO!!!", Font_7x10, White);
+//
+//	  		MPU6050_Read_Accel(&x, &y, &z);
+//
+//	  		//clearing previous position
+//	  		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) Black);
+//	  		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) Black);
+//	  		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) Black);
+//	  		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) Black);
+//
+//	  		xPos = move_x(device_zero_y ,y);
+//	  		yPos = move_y(device_zero_x, x);
+//
+//	  		if(yPos > 58){
+//	  			currentState = STATE_MENU;
+//	  		}
+//
+//	  		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
+//	  		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
+//	  		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) White);
+//	  		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) White);
+//
+//	  		ssd1306_UpdateScreen();
+//	  		HAL_Delay(100);
+//
+//	  	}
+//	  	else if(currentState = STATE_MENU){
+//	  		 //saving data from gyro to x,y,z variables
+//
+//	  				MPU6050_Read_Accel(&x, &y, &z);
+//
+//	  				//clearing previous position
+//	  				ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) Black);
+//	  				ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) Black);
+//	  				ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) Black);
+//	  				ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) Black);
+//
+//	  				//x on gyro is y on screen
+//	  				//changing player position
+//	  				xPos = move_x(device_zero_y ,y);
+//	  				yPos = move_y(device_zero_x, x);
+//
+//	  				ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
+//	  								ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
+//	  								ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) White);
+//	  								ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) White);
+//	  				switch(currentState){
+//	  					case STATE_HOME:
+//	  						HomeLoop();
+//	  						break;
+//	  					case STATE_MENU:
+//	  						MenuLoop();
+//	  						break;
+//	  				}
+//
+//
+//	  						ssd1306_UpdateScreen();
+//	  						HAL_Delay(100);
+//	  	}else if()
 
   }
 
