@@ -123,7 +123,8 @@ void print_float(float x) {
 typedef enum {
 	STATE_HOME,
     STATE_MENU,
-    STATE_GAME
+    STATE_GAME,
+	STATE_WIN
 } AppState;
 
 AppState currentState = STATE_HOME;
@@ -142,6 +143,11 @@ bool isStart = false;
 int whichMap = 0;
 int xPos = 1;
 int yPos = 1;
+int finishPosX = 0;
+int finishPosY = 0;
+
+uint32_t textStartTime = 0;
+uint8_t textShown = 0;
 
 
 
@@ -267,6 +273,18 @@ void GameLoop(){
 	drawMaze(maze);
 }
 
+void findFinishXY(uint8_t m[MAZE_H][MAZE_W]){
+	for (int i = 0; i < MAZE_H; i++) {
+	        for (int j=0; j < MAZE_W; j++) {
+	            if (m[i][j] == 3) {
+	                finishPosY = i;
+	                finishPosX = j;
+	                break;
+	            }
+	        }
+	    }
+}
+
 void MenuLoop(){
 
 	for(int i=0; i<MAZE_H; i++){
@@ -301,11 +319,14 @@ void MenuLoop(){
 								}
 							}
 			}
+		findFinishXY(maze);
 		drawMaze(maze);
 		currentState = STATE_GAME;
 	}
 
 }
+
+
 
 void drawMaze(uint8_t m[MAZE_H][MAZE_W]){
 	for(int i=0; i<MAZE_H; i++){
@@ -351,8 +372,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
               			  xPos=j;
               			  yPos=i;
               		  }
-              		  else if(maze[i][j] == 3)
-              			  drawFinish(j,i);
+              		  else if(maze[i][j] == 3){
+              			drawFinish(j,i);
+              		  }
+
                 	}
                 }
 
@@ -539,7 +562,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+	  printf("pozycja mety: %d\n", currentState);
 	  	if(currentState == STATE_GAME){
 
 	  		MPU6050_Read_Accel(&x, &y, &z);
@@ -552,6 +575,19 @@ int main(void)
 
 	  		xPos = move_x(device_zero_y ,y);
 	  		yPos = move_y(device_zero_x, x);
+	  		printf("pozycja mety: %d, %d\n", finishPosY, finishPosX);
+
+	  		if((yPos > finishPosY - 4 && yPos < finishPosY + 2) && (xPos > finishPosX - 4 && xPos < finishPosX + 2)){
+	  			ssd1306_Fill(Black);
+	  			currentState = STATE_WIN;
+
+
+
+
+
+
+//	  			ssd1306_UpdateScreen();
+	  		}
 
 	  		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
 	  		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
@@ -560,8 +596,36 @@ int main(void)
 
 	  		ssd1306_UpdateScreen();
 	  		HAL_Delay(100);
-	  	}else{
+	  	}else if(currentState == STATE_WIN){
+	  		ssd1306_WriteString("WYGRALES BRAWO!!!", Font_7x10, White);
+
+	  		MPU6050_Read_Accel(&x, &y, &z);
+
+	  		//clearing previous position
+	  		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) Black);
+	  		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) Black);
+	  		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) Black);
+	  		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) Black);
+
+	  		xPos = move_x(device_zero_y ,y);
+	  		yPos = move_y(device_zero_x, x);
+
+	  		if(yPos > 58){
+	  			currentState = STATE_MENU;
+	  		}
+
+	  		ssd1306_DrawPixel(xPos-1, yPos, (SSD1306_COLOR) White);
+	  		ssd1306_DrawPixel(xPos, yPos-1, (SSD1306_COLOR) White);
+	  		ssd1306_DrawPixel(xPos+1, yPos, (SSD1306_COLOR) White);
+	  		ssd1306_DrawPixel(xPos, yPos+1, (SSD1306_COLOR) White);
+
+	  		ssd1306_UpdateScreen();
+	  		HAL_Delay(100);
+
+	  	}
+	  	else{
 	  		 //saving data from gyro to x,y,z variables
+
 	  				MPU6050_Read_Accel(&x, &y, &z);
 
 	  				//clearing previous position
@@ -587,44 +651,6 @@ int main(void)
 	  						MenuLoop();
 	  						break;
 	  				}
-
-	  		//		if((xPos > 15 && xPos < 22) && (yPos > 48 && yPos <= 50)){
-	  		//					isStart = true;
-	  		//					ssd1306_Fill(Black);
-	  		//
-	  		//					for(int i=0; i<MAZE_H; i++){
-	  		//					    	for(int j=0; j<MAZE_W; j++){
-	  		//					  		  maze[i][j] = labirynthChoiceMaze[i][j];
-	  		//					    	}
-	  		//					    }
-	  		//
-	  		//					drawMaze(maze);
-	  		//
-	  		//					if((xPos >= 35 && xPos < 38) && yPos > 35){
-	  		//						whichMap = 1;
-	  		//					}else if((xPos >= 69 && xPos < 73) && yPos > 35){
-	  		//						whichMap = 2;
-	  		//					}
-	  		//
-	  		//					printf("whichMap => %d\n", whichMap);
-	  		//					ssd1306_Fill(Black);
-	  		//					if(whichMap == 1){
-	  		//						for(int i=0; i<MAZE_H; i++){
-	  		//							for(int j=0; j<MAZE_W; j++){
-	  		//								maze[i][j] = savedMaze1[i][j];
-	  		//							}
-	  		//						}
-	  		//					}else{
-	  		//						for(int i=0; i<MAZE_H; i++){
-	  		//							for(int j=0; j<MAZE_W; j++){
-	  		//									maze[i][j] = savedMaze2[i][j];
-	  		//							}
-	  		//						}
-	  		//					}
-	  		//
-	  		//					drawMaze(maze);
-	  		//					startGame(whichMap);
-
 
 
 	  						ssd1306_UpdateScreen();
